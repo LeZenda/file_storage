@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Document List{% endblock %}
+
+{% block content %}
+
+<form action="{{ request.path }}" class="clearfix" method="GET" enctype="multipart/form-data">
+    <div class="card-body row no-gutters align-items-center">
+        <div class="col-auto">
+            <i class="fas fa-search h4 text-body"></i>
+        </div>
+        <!--end of col-->
+        <div class="col">
+            <input class="form-control form-control-lg form-control-borderless" type="search" name="search" placeholder="Search topics or keywords" value="{{search}}">
+        </div>
+        <!--end of col-->
+        <div class="col-auto">
+            <button class="btn btn-lg btn-success" type="submit">Search</button>
+        </div>
+        <!--end of col-->
+    </div>
+</form>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Title</th>
+      <th scope="col">Text</th>
+      <th scope="col">Url</th>
+      <th scope="col">date_added</th>
+      <th scope="col">source</th>
+      <th scope="col">user</th>
+      <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>
+
+    {% for document in document_list %}
+
+        <tr>
+          <th scope="row">{{ document.title }}</th>
+          <td>{{ document.text|truncatechars:50 }}</td>
+          <td>{{ document.url }}</td>
+          <td>{{ document.date_added }}</td>
+          <td>{{ document.source }}</td>
+          <td>{{ document.user }}</td>
+
+          <!-- Only admin and owner for 1h can edit documents -->
+          {% if user.is_superuser or user == document.user and document.can_be_edited_by_owner %}
+          <td><a href="{% url 'document_update' id=document.id %}">change</a></td>
+          {% endif %}
+
+        </tr>
+
+    {% endfor %}
+
+  </tbody>
+</table>
+
+{% if perms.files_app.create_document %}
+<div class="col-lg-7 col-md-7 mt-2">
+  <a href="{% url 'document_create'%}" class="btn btn-primary">Add new document</a>
+</div>
+{% endif %}
+
+{% if user.is_superuser or user.is_staff %}
+<div class="col-lg-7 col-md-7 mt-2">
+    <a href="{% url 'download_documents_json' %}" class="btn btn-success export_link">
+        <i class="text-success-bold table-icon-lg"></i>
+        Download documents JSON File
+    </a>
+</div>
+
+<div class="col-lg-7 col-md-7 mt-2">
+    <a href="{% url 'export_documents_json' %}" class="btn btn-success export_link">
+        <i class="text-success-bold table-icon-lg"></i>
+        Export documents JSON File
+    </a>
+</div>
+{% endif %}
+
+
+
+{% endblock %}
+
+{% block extrajs %}
+<script type="text/javascript">
+    $(function() {
+        $( '.export_link' ).attr( 'href', function(index, value) {
+            return value + '?search=' + getUrlParameter('search');
+        });
+    });
+
+
+
+    //gets value from url
+    var getUrlParameter = function getUrlParameter(sParam) {
+
+        var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : sParameterName[1];
+            }
+        }
+    };
+</script>
+{% endblock %}
